@@ -1,0 +1,46 @@
+from agno.agent import Agent
+from agno.models.google import Gemini
+import time
+
+api_key = "AIzaSyCOF2EONuI1zIjUExFZL29j9SXK4Ak9KYY"  # Replace with your valid API key
+
+english_agent = Agent(
+    name="English Agent",
+    role="You only answer in English",
+    model=Gemini(id="gemini-1.5-flash", api_key=api_key),
+)
+
+agents = [english_agent]
+
+def safe_run(agent, message, retries=3, delay=10):
+    """
+    Run agent.run() with retries on quota errors.
+    """
+    for attempt in range(1, retries + 1):
+        try:
+            response = agent.run(message)
+            return response.content.strip()
+        except Exception as e:
+            err_msg = str(e)
+            if "RESOURCE_EXHAUSTED" in err_msg or "quota" in err_msg.lower():
+                print(f"Quota exceeded for {agent.name}. Attempt {attempt} of {retries}. Waiting {delay}s...")
+                time.sleep(delay)
+            else:
+                # Unknown error, raise it immediately
+                raise
+    return f"API quota exceeded or API error for {agent.name}. Please check your Google Cloud quota and billing."
+
+if __name__ == "__main__":
+    while True:
+        user_input = input("Enter your message (type 'exit' to quit): ")
+        if user_input.lower() == "exit":
+            print("Goodbye!")
+            break
+
+        print("\nResponse from English Agent:\n")
+        try:
+            response_text = safe_run(english_agent, user_input)
+        except Exception as e:
+            response_text = f"An error occurred: {e}"
+        print(response_text)
+        print()
