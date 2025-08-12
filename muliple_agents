@@ -1,0 +1,52 @@
+from agno.agent import Agent
+from agno.models.google import Gemini
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+gemini_api_key = os.getenv("GEMINI_API_KEY") or "YOUR_GEMINI_API_KEY"
+if not gemini_api_key:
+    raise ValueError("GEMINI_API_KEY not found in environment variables or .env file.")
+
+# Create three agents with different roles
+doctor_agent = Agent(
+    model=Gemini(id="gemini-1.5-flash", api_key=gemini_api_key),
+    instructions="Doctor mode enabled. You are a medical expert. Answer questions related to health and medicine. Use markdown formatting.",
+    markdown=True,
+)
+
+tech_agent = Agent(
+    model=Gemini(id="gemini-1.5-flash", api_key=gemini_api_key),
+    instructions="Tech expert mode enabled. Answer questions about technology, programming, and computers clearly and concisely.",
+    markdown=True,
+)
+
+finance_agent = Agent(
+    model=Gemini(id="gemini-1.5-flash", api_key=gemini_api_key),
+    instructions="Finance expert mode enabled. Answer questions related to finance, stock market, and economics with clarity.",
+    markdown=True,
+)
+
+def select_agent(query):
+    query_lower = query.lower()
+    if any(word in query_lower for word in ["health", "doctor", "medicine", "medical", "symptom"]):
+        return doctor_agent
+    elif any(word in query_lower for word in ["tech", "technology", "programming", "computer", "software"]):
+        return tech_agent
+    elif any(word in query_lower for word in ["finance", "stock", "economy", "money", "investment"]):
+        return finance_agent
+    else:
+        # Default agent (e.g., tech_agent)
+        return tech_agent
+
+while True:
+    user_query = input("\nAsk me anything (or type 'exit' to quit): ")
+    if user_query.lower() in ["exit", "quit"]:
+        print("Goodbye!")
+        break
+
+    agent = select_agent(user_query)
+    print(f"\n[Using agent with role: {agent.instructions.split('.')[0]}]\n")
+    agent.print_response(user_query, stream=True)
