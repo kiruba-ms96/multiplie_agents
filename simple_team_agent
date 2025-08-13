@@ -1,0 +1,62 @@
+from agno.agent import Agent
+from agno.team import Team
+from agno.models.google import Gemini
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+gemini_api_key = os.getenv("GEMINI_API_KEY") or "YOUR_GEMINI_API_KEY"
+if not gemini_api_key:
+    raise ValueError("GEMINI_API_KEY not found in environment variables or .env file.")
+
+# Define individual agents with models and instructions
+doctor_agent = Agent(
+    name="Doctor Agent",
+    model=Gemini(id="gemini-1.5-flash", api_key=gemini_api_key),
+    instructions="Doctor mode enabled. You are a medical expert. Answer questions related to health and medicine. Use markdown formatting.",
+    markdown=True,
+    role="You are a medical expert."
+)
+
+tech_agent = Agent(
+    name="Tech Agent",
+    model=Gemini(id="gemini-1.5-flash", api_key=gemini_api_key),
+    instructions="Tech expert mode enabled. Answer questions about technology, programming, and computers clearly and concisely.",
+    markdown=True,
+    role="You are a technology expert."
+)
+
+finance_agent = Agent(
+    name="Finance Agent",
+    model=Gemini(id="gemini-1.5-flash", api_key=gemini_api_key),
+    instructions="Finance expert mode enabled. Answer questions related to finance, stock market, and economics with clarity.",
+    markdown=True,
+    role="You are a finance expert."
+)
+
+expert_team = Agent(
+    name="Expert Team",
+    role="You are a team of expert agents specialized in medical, tech, and finance domains.",
+    model=Gemini(id="gemini-1.5-flash", api_key=gemini_api_key),
+    team=[doctor_agent, tech_agent, finance_agent],
+    instructions=[
+        "Collaborate and share information to provide comprehensive answers.",
+        "Each agent should contribute their expertise to the final response.",
+        "Use markdown formatting for all responses."
+    ],
+    markdown=True
+)
+
+# Main loop to interact with user
+while True:
+    user_query = input("\nAsk me anything (or type 'exit' to quit): ")
+    if user_query.lower() in ["exit", "quit"]:
+        print("Goodbye!")
+        break
+
+    # Since select_agent is removed, decide what to do here.
+    # For example, use the team for every query:
+    print(f"\n[Using the team: {expert_team.name}]\n")
+    expert_team.print_response(user_query, stream=True)
